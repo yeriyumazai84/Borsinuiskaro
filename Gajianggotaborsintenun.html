@@ -1,0 +1,357 @@
+<!doctype html>
+
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Borsin Tenun - Pengelolaan Gaji</title>
+  <style>
+    :root{
+      --primary:#a51212; /* merah khas ulos */
+      --muted:#f5f2f2;
+      --card:#ffffff;
+      --text:#222;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--muted);color:var(--text);margin:0;padding:16px}
+    .container{max-width:980px;margin:0 auto}
+    .card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    h1{margin:4px 0 12px;color:var(--primary)}
+    .roles{display:flex;gap:8px;flex-wrap:wrap}
+    button{background:var(--primary);color:white;border:0;padding:10px 12px;border-radius:8px;font-weight:600;cursor:pointer}
+    button.ghost{background:transparent;color:var(--primary);border:2px solid var(--primary)}
+    button.small{padding:6px 8px;font-size:14px}
+    label{display:block;margin-top:8px;font-weight:600}
+    input,select,textarea{width:100%;padding:8px;margin-top:6px;border:1px solid #ddd;border-radius:8px}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border:1px solid #eee;text-align:left}
+    .flex{display:flex;gap:8px;align-items:center}
+    .gap{height:8px}
+    .muted{color:#666;font-size:13px}
+    .right{text-align:right}
+    .small{font-size:13px}
+    .actions{display:flex;gap:6px}
+    .chip{display:inline-block;padding:6px 8px;border-radius:999px;background:#fff;border:1px solid #eee}
+    .danger{background:#ffecec;color:#900;border:1px solid #f1c0c0}
+    .primary-outline{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+    .hidden{display:none}
+    @media(min-width:720px){.roles{flex-wrap:nowrap}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="home" class="card">
+      <h1>Borsin Tenun — Pengelolaan Gaji</h1>
+      <p class="muted">Pilih peran untuk masuk. (Sistem menyimpan data menggunakan <strong>localStorage</strong>)</p>
+      <div class="roles" style="margin-top:12px">
+        <button id="btn-admin" type="button">Login Admin</button>
+        <button id="btn-karyawan" type="button" class="ghost">Login Karyawan</button>
+        <button id="btn-bos" type="button" class="ghost">Login Bos</button>
+      </div>
+    </div><!-- ADMIN VIEW -->
+<div id="view-admin" class="card hidden">
+  <div class="flex">
+    <h2>Admin — Panel Pengaturan</h2>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button id="btn-back-admin" type="button" class="ghost small">Kembali</button>
+    </div>
+  </div>
+
+  <div class="flex" style="margin-bottom:8px">
+    <button id="tab-manage" class="primary-outline small" type="button">Manage Data</button>
+    <button id="tab-rekap" class="small" type="button">Lihat Rekapan</button>
+  </div>
+
+  <div id="manage-area">
+    <h3>Data Karyawan</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="empName" placeholder="Nama karyawan" />
+      <button id="addEmp" type="button">Tambah</button>
+    </div>
+    <table id="tblEmp" style="margin-top:10px"><thead><tr><th>No</th><th>Nama</th><th>Aksi</th></tr></thead><tbody></tbody></table>
+
+    <div class="gap"></div>
+    <h3>Jenis Ulos (gaji & biaya pakan)</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="ulosName" placeholder="Nama jenis ulos" />
+      <input id="ulosWage" placeholder="Gaji per ulos (angka)" />
+      <input id="ulosPakan" placeholder="Biaya pakan per ulos (angka)" />
+      <button id="addUlos" type="button">Tambah</button>
+    </div>
+    <table id="tblUlos" style="margin-top:10px"><thead><tr><th>No</th><th>Jenis</th><th>Gaji</th><th>Pakan</th><th>Aksi</th></tr></thead><tbody></tbody></table>
+
+    <div class="gap"></div>
+    <h3>Jenis Pembayaran / Potongan (admin membuat pilihan)</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="payName" placeholder="Nama pembayaran (potongan)" />
+      <input id="payAmt" placeholder="Jumlah potongan (angka)" />
+      <button id="addPay" type="button">Tambah</button>
+    </div>
+    <table id="tblPay" style="margin-top:10px"><thead><tr><th>No</th><th>Nama</th><th>Jumlah</th><th>Aksi</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div id="rekap-area" class="hidden">
+    <h3>Rekapan Gaji</h3>
+    <div id="rekapTableWrap"></div>
+  </div>
+</div>
+
+<!-- KARYAWAN VIEW -->
+<div id="view-karyawan" class="card hidden">
+  <div class="flex">
+    <h2>Form Pengisian Gaji — Karyawan</h2>
+    <div style="margin-left:auto">
+      <button id="btn-back-ky" type="button" class="ghost small">Kembali</button>
+    </div>
+  </div>
+  <div>
+    <label>Nama</label>
+    <select id="karyawanSelect"></select>
+
+    <label>Jenis Ulos (pilih bisa lebih dari satu, masukkan jumlah untuk tiap jenis)</label>
+    <div id="ulosList" class="card" style="padding:10px"></div>
+
+    <label>Biaya Pakan (otomatis)</label>
+    <input id="totalPakan" disabled />
+
+    <label>Pembayaran / Potongan (pilih sesuai pilihan admin)</label>
+    <div id="payList" class="card" style="padding:10px"></div>
+
+    <label>Total Gaji Kotor</label>
+    <input id="totalGajiKotor" disabled />
+
+    <label>Total Potongan (pakan + pembayaran)</label>
+    <input id="totalPotongan" disabled />
+
+    <label>Gaji Bersih</label>
+    <input id="gajiBersih" disabled />
+
+    <div style="margin-top:10px"><button id="kirimGaji" type="button">Kirim</button></div>
+  </div>
+</div>
+
+<!-- BOS VIEW -->
+<div id="view-bos" class="card hidden">
+  <div class="flex">
+    <h2>Rekapan Gaji Borsin Tenun</h2>
+    <div style="margin-left:auto"><button id="btn-back-bos" type="button" class="ghost small">Kembali</button></div>
+  </div>
+  <div id="bosRekapWrap"></div>
+</div>
+
+  </div>  <script>
+    // ======= Helpers: localStorage wrappers =======
+    const DB = {
+      get(key){try{return JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}},
+      set(key,val){localStorage.setItem(key,JSON.stringify(val))},
+      ensure(key,init){if(!DB.get(key)){DB.set(key,init)}}
+    }
+
+    // Initialize default data if empty
+    DB.ensure('employees',[])
+    DB.ensure('ulosTypes',[])
+    DB.ensure('payTypes',[])
+    DB.ensure('recaps',[])
+
+    // Sample data helper (if totally empty, add sample to start)
+    if((DB.get('employees')||[]).length===0 && (DB.get('ulosTypes')||[]).length===0 && (DB.get('payTypes')||[]).length===0){
+      DB.set('employees',[{id:uid(),'name':'Siti'},{id:uid(),'name':'Ari'},{id:uid(),'name':'Budi'}])
+      DB.set('ulosTypes',[
+        {id:uid(),name:'Ulos Motif A', wage:50000, pakan:5000},
+        {id:uid(),name:'Ulos Motif B', wage:75000, pakan:7000}
+      ])
+      DB.set('payTypes',[
+        {id:uid(),name:'Kas Bon', amount:20000},
+        {id:uid(),name:'Iuran', amount:5000}
+      ])
+    }
+
+    // ======= UI elements =======
+    const btnAdmin=document.getElementById('btn-admin')
+    const btnKy=document.getElementById('btn-karyawan')
+    const btnBos=document.getElementById('btn-bos')
+
+    const viewAdmin=document.getElementById('view-admin')
+    const viewKy=document.getElementById('view-karyawan')
+    const viewBos=document.getElementById('view-bos')
+    const home=document.getElementById('home')
+
+    // Admin parts
+    const addEmp=document.getElementById('addEmp'), empName=document.getElementById('empName'), tblEmp=document.querySelector('#tblEmp tbody')
+    const addUlos=document.getElementById('addUlos'), ulosName=document.getElementById('ulosName'), ulosWage=document.getElementById('ulosWage'), ulosPakan=document.getElementById('ulosPakan'), tblUlos=document.querySelector('#tblUlos tbody')
+    const addPay=document.getElementById('addPay'), payName=document.getElementById('payName'), payAmt=document.getElementById('payAmt'), tblPay=document.querySelector('#tblPay tbody')
+
+    const tabManage=document.getElementById('tab-manage'), tabRekap=document.getElementById('tab-rekap')
+    const manageArea=document.getElementById('manage-area'), rekapArea=document.getElementById('rekap-area'), rekapTableWrap=document.getElementById('rekapTableWrap')
+
+    // Karyawan parts
+    const karyawanSelect=document.getElementById('karyawanSelect'), ulosList=document.getElementById('ulosList'), payList=document.getElementById('payList')
+    const totalPakan=document.getElementById('totalPakan'), totalGajiKotor=document.getElementById('totalGajiKotor'), totalPotongan=document.getElementById('totalPotongan'), gajiBersih=document.getElementById('gajiBersih')
+    const kirimGaji=document.getElementById('kirimGaji')
+
+    // Bos
+    const bosRekapWrap=document.getElementById('bosRekapWrap')
+
+    // Back buttons
+    document.getElementById('btn-back-admin').addEventListener('click',()=>resetToHome())
+    document.getElementById('btn-back-ky').addEventListener('click',()=>resetToHome())
+    document.getElementById('btn-back-bos').addEventListener('click',()=>resetToHome())
+
+    // Role buttons
+    btnAdmin.addEventListener('click',()=>openView('admin'))
+    btnKy.addEventListener('click',()=>openView('karyawan'))
+    btnBos.addEventListener('click',()=>openView('bos'))
+
+    // Tabs
+    tabManage.addEventListener('click',()=>{manageArea.style.display='block'; rekapArea.style.display='none'})
+    tabRekap.addEventListener('click',()=>{manageArea.style.display='none'; rekapArea.style.display='block'; renderRekapForAdmin()})
+
+    // Add admin data
+    addEmp.addEventListener('click',()=>{
+      const name=empName.value.trim(); if(!name)return alert('Masukkan nama');
+      const employees=DB.get('employees')
+      employees.push({id:uid(),name})
+      DB.set('employees',employees); empName.value=''; renderEmployees()
+    })
+
+    addUlos.addEventListener('click',()=>{
+      const name=ulosName.value.trim(); const wage=Number(ulosWage.value||0); const pakan=Number(ulosPakan.value||0);
+      if(!name || !wage) return alert('Masukkan nama dan gaji per ulos')
+      const u=DB.get('ulosTypes'); u.push({id:uid(),name,wage,pakan}); DB.set('ulosTypes',u); ulosName.value=''; ulosWage.value=''; ulosPakan.value=''; renderUlos()
+    })
+
+    addPay.addEventListener('click',()=>{
+      const name=payName.value.trim(); const amt=Number(payAmt.value||0)
+      if(!name || !amt) return alert('Masukkan nama dan jumlah potongan')
+      const p=DB.get('payTypes'); p.push({id:uid(),name,amount:amt}); DB.set('payTypes',p); payName.value=''; payAmt.value=''; renderPays()
+    })
+
+    // Render helpers
+    function renderEmployees(){
+      const data=DB.get('employees')||[]; tblEmp.innerHTML=''
+      data.forEach((e,i)=>{
+        const tr=document.createElement('tr')
+        tr.innerHTML=`<td>${i+1}</td><td>${e.name}</td><td><div class="actions"><button data-id="${e.id}" class="edit-emp" type="button">Edit</button><button data-id="${e.id}" class="del-emp danger" type="button">Hapus</button></div></td>`
+        tblEmp.appendChild(tr)
+      })
+      // bind
+      [...document.querySelectorAll('.del-emp')].forEach(btn=>btn.onclick=()=>{if(confirm('Hapus karyawan?')){const id=btn.dataset.id; const arr=DB.get('employees').filter(x=>x.id!==id);DB.set('employees',arr); renderEmployees(); renderKaryawanSelect();}})
+      [...document.querySelectorAll('.edit-emp')].forEach(btn=>btn.onclick=()=>{
+        const id=btn.dataset.id; const arr=DB.get('employees'); const item=arr.find(x=>x.id===id); const newName=prompt('Edit nama',item.name); if(newName){item.name=newName; DB.set('employees',arr); renderEmployees(); renderKaryawanSelect()}
+      })
+      renderKaryawanSelect()
+    }
+
+    function renderUlos(){
+      const data=DB.get('ulosTypes')||[]; tblUlos.innerHTML=''
+      data.forEach((u,i)=>{
+        const tr=document.createElement('tr')
+        tr.innerHTML=`<td>${i+1}</td><td>${u.name}</td><td>${formatNumber(u.wage)}</td><td>${formatNumber(u.pakan)}</td><td><div class="actions"><button data-id="${u.id}" class="edit-ulos" type="button">Edit</button><button data-id="${u.id}" class="del-ulos danger" type="button">Hapus</button></div></td>`
+        tblUlos.appendChild(tr)
+      })
+      [...document.querySelectorAll('.del-ulos')].forEach(btn=>btn.onclick=()=>{if(confirm('Hapus jenis ulos?')){const id=btn.dataset.id; const arr=DB.get('ulosTypes').filter(x=>x.id!==id);DB.set('ulosTypes',arr); renderUlos(); renderUlosList();}})
+      [...document.querySelectorAll('.edit-ulos')].forEach(btn=>btn.onclick=()=>{
+        const id=btn.dataset.id; const arr=DB.get('ulosTypes'); const item=arr.find(x=>x.id===id);
+        const name=prompt('Nama',item.name); const wage=prompt('Gaji per ulos',item.wage); const pakan=prompt('Pakan per ulos',item.pakan);
+        if(name && wage!=null){item.name=name; item.wage=Number(wage); item.pakan=Number(pakan); DB.set('ulosTypes',arr); renderUlos(); renderUlosList();}
+      })
+      renderUlosList()
+    }
+
+    function renderPays(){
+      const data=DB.get('payTypes')||[]; tblPay.innerHTML=''
+      data.forEach((p,i)=>{
+        const tr=document.createElement('tr')
+        tr.innerHTML=`<td>${i+1}</td><td>${p.name}</td><td>${formatNumber(p.amount)}</td><td><div class="actions"><button data-id="${p.id}" class="edit-pay" type="button">Edit</button><button data-id="${p.id}" class="del-pay danger" type="button">Hapus</button></div></td>`
+        tblPay.appendChild(tr)
+      })
+      [...document.querySelectorAll('.del-pay')].forEach(btn=>btn.onclick=()=>{if(confirm('Hapus jenis pembayaran?')){const id=btn.dataset.id; const arr=DB.get('payTypes').filter(x=>x.id!==id);DB.set('payTypes',arr); renderPays(); renderPayList();}})
+      [...document.querySelectorAll('.edit-pay')].forEach(btn=>btn.onclick=()=>{
+        const id=btn.dataset.id; const arr=DB.get('payTypes'); const item=arr.find(x=>x.id===id);
+        const name=prompt('Nama',item.name); const amt=prompt('Jumlah',item.amount);
+        if(name && amt!=null){item.name=name; item.amount=Number(amt); DB.set('payTypes',arr); renderPays(); renderPayList();}
+      })
+      renderPayList()
+    }
+
+    // Render lists for Karyawan form
+    function renderKaryawanSelect(){const data=DB.get('employees')||[]; karyawanSelect.innerHTML=''; data.forEach(e=>{const opt=document.createElement('option'); opt.value=e.id; opt.textContent=e.name; karyawanSelect.appendChild(opt)})}
+    function renderUlosList(){const data=DB.get('ulosTypes')||[]; ulosList.innerHTML=''; data.forEach(u=>{
+      const row=document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center'; row.style.marginBottom='6px'
+      row.innerHTML=`<label style="flex:1"><input type="checkbox" data-id="${u.id}" class="ulos-cb"/> ${u.name} (Gaji:${formatNumber(u.wage)}, Pakan:${formatNumber(u.pakan)})</label><input type="number" min="0" placeholder="Jumlah" data-id="${u.id}" class="ulos-qty" style="width:86px" disabled />`
+      ulosList.appendChild(row)
+    })
+      // bind enabling qty when checkbox checked
+      [...document.querySelectorAll('.ulos-cb')].forEach(cb=>cb.onchange=()=>{
+        const id=cb.dataset.id; const qty=document.querySelector('.ulos-qty[data-id="'+id+'"]'); qty.disabled=!cb.checked; if(!cb.checked) qty.value=''; computeTotals(); })
+    }
+    function renderPayList(){const data=DB.get('payTypes')||[]; payList.innerHTML=''; data.forEach(p=>{
+      const el=document.createElement('div'); el.style.marginBottom='6px'; el.innerHTML=`<label><input type="checkbox" data-id="${p.id}" class="pay-cb"/> ${p.name} (${formatNumber(p.amount)})</label>`
+      payList.appendChild(el)
+    })
+      [...document.querySelectorAll('.pay-cb')].forEach(cb=>cb.onchange=()=>computeTotals())
+    }
+
+    // Compute totals on karyawan form
+    function computeTotals(){
+      const ulos=DB.get('ulosTypes')||[]; const pays=DB.get('payTypes')||[]
+      let totalGaji=0; let totalPakanVal=0; let totalPayments=0
+      // ulos
+      [...document.querySelectorAll('.ulos-cb')].forEach(cb=>{
+        if(cb.checked){const id=cb.dataset.id; const qtyEl=document.querySelector('.ulos-qty[data-id="'+id+'"]'); const qty=Number(qtyEl.value||0); const u=ulos.find(x=>x.id===id); totalGaji += (u.wage * qty); totalPakanVal += (u.pakan * qty)}
+      })
+      // payments
+      [...document.querySelectorAll('.pay-cb')].forEach(cb=>{if(cb.checked){const id=cb.dataset.id; const p=pays.find(x=>x.id===id); totalPayments += (p.amount)}})
+
+      totalPakan.value = formatNumber(totalPakanVal)
+      totalGajiKotor.value = formatNumber(totalGaji)
+      totalPotongan.value = formatNumber(totalPakanVal + totalPayments)
+      gajiBersih.value = formatNumber(totalGaji - totalPakanVal - totalPayments)
+    }
+
+    // Submit gaji (karyawan)
+    kirimGaji.addEventListener('click',()=>{
+      const empId=karyawanSelect.value; if(!empId) return alert('Pilih nama');
+      const ulos=DB.get('ulosTypes')||[]; const pays=DB.get('payTypes')||[]
+      const selectedUlos=[]; let invalid=false;
+      [...document.querySelectorAll('.ulos-cb')].forEach(cb=>{if(cb.checked){const id=cb.dataset.id; const qty=Number(document.querySelector('.ulos-qty[data-id="'+id+'"]').value||0); if(qty<=0) invalid=true; } })
+      if(invalid) return alert('Masukkan jumlah ulos untuk semua ulos yang dipilih')
+      // gather items
+      [...document.querySelectorAll('.ulos-cb')].forEach(cb=>{if(cb.checked){const id=cb.dataset.id; const qty=Number(document.querySelector('.ulos-qty[data-id="'+id+'"]').value||0); const u=ulos.find(x=>x.id===id); selectedUlos.push({id:u.id,name:u.name,qty, wage:u.wage, pakan:u.pakan, subtotal: u.wage*qty, pakanTotal: u.pakan*qty})}})
+      const selectedPays=[]; [...document.querySelectorAll('.pay-cb')].forEach(cb=>{if(cb.checked){const id=cb.dataset.id; const p=pays.find(x=>x.id===id); selectedPays.push({id:p.id,name:p.name,amount:p.amount})}})
+      // totals
+      const totalGaji = selectedUlos.reduce((s,i)=>s+i.subtotal,0)
+      const totalPakanVal = selectedUlos.reduce((s,i)=>s+i.pakanTotal,0)
+      const totalPayments = selectedPays.reduce((s,i)=>s+i.amount,0)
+      const gajiB = totalGaji - totalPakanVal - totalPayments
+      // prepare recaps entry
+      const emp = (DB.get('employees')||[]).find(x=>x.id===empId)
+      const recaps = DB.get('recaps')||[]
+      const entry = {
+        id:uid(), date:new Date().toISOString(), empId, empName:emp.name, ulos:selectedUlos, payments:selectedPays,
+        totals:{totalGaji, totalPakanVal, totalPayments, gajiB}
+      }
+      recaps.push(entry); DB.set('recaps',recaps)
+      alert('Tersimpan. Data masuk ke rekapan (hanya dilihat oleh Bos & Admin)')
+      // clear form
+      [...document.querySelectorAll('.ulos-cb')].forEach(cb=>{cb.checked=false}); [...document.querySelectorAll('.ulos-qty')].forEach(q=>{q.value=''; q.disabled=true}); [...document.querySelectorAll('.pay-cb')].forEach(cb=>cb.checked=false)
+      computeTotals()
+    })
+
+    // Render Rekap for Admin and Bos
+    function renderRekapForAdmin(){ renderRekap(true) }
+    function renderRekapForBos(){ renderRekap(false) }
+
+    function renderRekap(isAdmin){
+      const recaps = DB.get('recaps')||[]; if(recaps.length===0){ const tbl = '<div class="muted">Belum ada data rekapan.</div>'; if(isAdmin) rekapTableWrap.innerHTML=tbl; else bosRekapWrap.innerHTML=tbl; return }
+      // build table
+      let html = '<table><thead><tr><th>No</th><th>Nama</th><th>Jenis Ulos</th><th>Jumlah</th><th>Biaya Pakan</th><th>Pembayaran</th><th>Gaji Bersih</th>'
+      if(isAdmin) html += '<th>Aksi</th>'
+      html += '</tr></thead><tbody>'
+      let grand={ulos:0,pakan:0,pay:0,gaji:0}
+      recaps.forEach((r,i)=>{
+        const jenis = r.ulos.map(u=>u.name+' x'+u.qty).join('<br>')
+        const jumlah = r.ulos.map(u=>u.qty).reduce((s,n)=>s+n,0)
+        const pakan = r.totals.totalPakanVal
+        const pays = r.payments.map(p=>p.name+ ' ('+formatNumber(p.amount)+')').join('<br>')
+        html += `<tr><td>${i+1}</td><td>${r.empName}</td><td>${jenis}</td><td>${jumlah}</td><td>${formatNumber(pakan)}</td><td>${pays}</td><td>${formatNu
